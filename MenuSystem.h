@@ -28,17 +28,23 @@
 #include "Keypad.h"
 
 enum MenuItemType {
+  SUBMENU,
   ACTION_ITEM,
   USER_INPUT,
 };
 
+class MenuSystem;
+
 class MenuItem {
 public:
-  MenuItem(const char *name, MenuItemType type, void (*action)(void*), void *objectPointer);
+  MenuItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *objectPointer, MenuSystem *parentMenu);
   const char *name;
   MenuItemType type;
   void (*action)(void*);
+  void (*actionHold)(void*);
+  void (*actionRelease)(void*);
   void *objectPointer;
+  MenuSystem *parentMenu;
   MenuItem *next;
 
 };
@@ -49,7 +55,7 @@ public:
   MenuSystem(SSD1306AsciiSpi &display);
   void begin();
   void addSubmenu(MenuSystem &submenu, const char *name);
-  void addItem(const char *name, MenuItemType type, void (*action)(void*), void *object);
+  void addItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *object, MenuSystem *parentMenu);
   void processKeypad(char key, KeyState keyState);
 
 private:
@@ -57,6 +63,7 @@ private:
   MenuSystem *_currentMenu;
   MenuItem *_currentMenuItem;
   void _displayStartupInfo();
+  void _displayHomeScreen();
   void _displayKeyAction(char key, KeyState keyState);
   void _displayMenu();
   void _displayInputScreen();
@@ -67,6 +74,7 @@ private:
 
 extern MenuSystem menuSystem;
 extern Keypad keypad;
+extern SSD1306AsciiSpi display;
 
 void keypadEvent(KeypadEvent key);
 

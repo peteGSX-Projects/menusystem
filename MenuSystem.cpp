@@ -48,11 +48,8 @@ MenuSystem menuSystem(display);
 MenuItem public methods
 ***********************************************************************************/
 // Constructor
-MenuItem::MenuItem(const char *name, MenuItemType type, void (*action)(void*), void *objectPointer)
-    : name(name), type(type), action(action), objectPointer(objectPointer), next(nullptr) {}
-
-
-
+MenuItem::MenuItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *objectPointer, MenuSystem *parentMenu)
+    : name(name), type(type), action(action), actionHold(actionHold), actionRelease(actionRelease), objectPointer(objectPointer), parentMenu(parentMenu), next(nullptr) {}
 
 /***********************************************************************************
 MenuItem private methods
@@ -68,14 +65,16 @@ MenuSystem::MenuSystem(SSD1306AsciiSpi &display)
 void MenuSystem::begin() {
   _display.begin(OLED_TYPE, CS_PIN, DC_PIN);
   _displayStartupInfo();
+  delay(2000);
+  _displayHomeScreen();
 }
 
 void MenuSystem::addSubmenu(MenuSystem &submenu, const char *name) {
-
+  MenuItem *item = new MenuItem("Menu 1", SUBMENU, nullptr, nullptr, nullptr, nullptr, this);
 }
 
-void MenuSystem::addItem(const char *name, MenuItemType type, void (*action)(void*), void *object) {
-  MenuItem *newItem = new MenuItem(name, type, action, object);
+void MenuSystem::addItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *object, MenuSystem *parentMenu) {
+  MenuItem *newItem = new MenuItem(name, type, action, actionHold, actionRelease, object, parentMenu);
   if (_currentMenuItem) {
     _currentMenuItem->next = newItem;
   } else {
@@ -114,8 +113,18 @@ void MenuSystem::_displayStartupInfo() {
   _display.print(F("Menu testing"));
 }
 
+void MenuSystem::_displayHomeScreen() {
+  _display.clear();
+  _display.set2X();
+  _display.setCursor(0, 0);
+  _display.print(F("Home"));
+  _display.set1X();
+  _display.setCursor(0, 7);
+  _display.print(F("* Menu"));
+}
+
 void MenuSystem::_displayKeyAction(char key, KeyState keyState) {
-  _display.setCursor(0, 2);
+  _display.setCursor(0, 6);
   _display.clearToEOL();
   _display.print(key);
   switch (keyState) {

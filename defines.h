@@ -59,7 +59,7 @@
 //  Keypad configuration.
 // 
 #define KEYPAD_DEBOUNCE 10
-#define KEYPAD_HOLD 500
+#define KEYPAD_HOLD 250
 
 #if defined(ARDUINO_BLUEPILL_F103C8) || defined(ARDUINO_BLACKPILL_F411CE)
 #define KEYPAD_PIN1 PB3
