@@ -4,6 +4,6 @@
 #include <Arduino.h>
 #include "MenuSystem.h"
 
-void setupMenus();
+void setupStaticMenus();
 
 #endif

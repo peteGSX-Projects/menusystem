@@ -33,34 +33,34 @@ enum MenuItemType {
   USER_INPUT,
 };
 
-class MenuSystem;
+class Menu;
 
 class MenuItem {
 public:
-  MenuItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *objectPointer, MenuSystem *parentMenu);
+  MenuItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *objectPointer, Menu *parentMenu);
   const char *name;
   MenuItemType type;
   void (*action)(void*);
   void (*actionHold)(void*);
   void (*actionRelease)(void*);
   void *objectPointer;
-  MenuSystem *parentMenu;
+  Menu *parentMenu;
   MenuItem *next;
 
 };
 
-class MenuSystem {
+class Menu {
 public:
-  // MenuSystem(SSD1306AsciiSpi &display, Keypad &keypad);
-  MenuSystem(SSD1306AsciiSpi &display);
+  // Menu(SSD1306AsciiSpi &display, Keypad &keypad);
+  Menu(SSD1306AsciiSpi &display);
   void begin();
-  void addSubmenu(MenuSystem &submenu, const char *name);
-  void addItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *object, MenuSystem *parentMenu);
+  void addSubmenu(Menu &submenu, const char *name);
+  void addItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *object, Menu *parentMenu);
   void processKeypad(char key, KeyState keyState);
 
 private:
   SSD1306AsciiSpi &_display;
-  MenuSystem *_currentMenu;
+  Menu *_currentMenu;
   MenuItem *_currentMenuItem;
   void _displayStartupInfo();
   void _displayHomeScreen();
@@ -72,7 +72,7 @@ private:
 
 // End of class
 
-extern MenuSystem menuSystem;
+extern Menu menuSystem;
 extern Keypad keypad;
 extern SSD1306AsciiSpi display;
 

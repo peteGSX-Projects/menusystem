@@ -7,7 +7,7 @@ void setup() {
   keypad.addEventListener(keypadEvent);
   keypad.setHoldTime(KEYPAD_HOLD);
   menuSystem.begin();
-  setupMenus();
+  setupStaticMenus();
 }
 
 void loop() {
