@@ -26,56 +26,71 @@
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiSpi.h"
 #include "Keypad.h"
+#include "StaticMenus.h"
 
-enum MenuItemType {
-  SUBMENU,
-  ACTION_ITEM,
-  USER_INPUT,
-};
-
-class Menu;
-
+/// @brief Class for each stored menu item
 class MenuItem {
 public:
-  MenuItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *objectPointer, Menu *parentMenu);
   const char *name;
-  MenuItemType type;
-  void (*action)(void*);
-  void (*actionHold)(void*);
-  void (*actionRelease)(void*);
+  void (*action)();
+  void (*actionHold)();
+  void (*actionRelease)();
   void *objectPointer;
-  Menu *parentMenu;
   MenuItem *next;
 
+  // Constructor
+  MenuItem(const char *name,
+            void (*action)(),
+            void (*actionHold)(),
+            void (*actionRelease)(),
+            void *objectPointer) {
+    this->name = name;
+    this->action = action;
+    this->actionHold = actionHold;
+    this->actionRelease = actionRelease;
+    this->objectPointer = objectPointer;
+    this->next = nullptr;
+  }
 };
 
-class Menu {
+/// @brief Class for each submenu, inherits from MenuItem class
+class Submenu : public MenuItem {
 public:
-  // Menu(SSD1306AsciiSpi &display, Keypad &keypad);
-  Menu(SSD1306AsciiSpi &display);
-  void begin();
-  void addSubmenu(Menu &submenu, const char *name);
-  void addItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *object, Menu *parentMenu);
+  Submenu(const char *name) : MenuItem(name, nullptr, nullptr, nullptr, nullptr) {}
+};
+
+class MenuManager {
+public:
+  MenuManager(SSD1306AsciiSpi &display);
+
+  /// @brief Add the provided MenuItem object to the menu manager
+  /// @param item 
+  void addMenuItem(MenuItem *item);
+
+  /// @brief Display the current menu
+  void displayMenu();
+
+  /// @brief Process keypad input, called from the keypad event handler
+  /// @param key char
+  /// @param keyState KeyState typedef from Keypad class
   void processKeypad(char key, KeyState keyState);
 
 private:
   SSD1306AsciiSpi &_display;
-  Menu *_currentMenu;
   MenuItem *_currentMenuItem;
-  void _displayStartupInfo();
-  void _displayHomeScreen();
   void _displayKeyAction(char key, KeyState keyState);
-  void _displayMenu();
-  void _displayInputScreen();
 
 };
 
 // End of class
 
-extern Menu menuSystem;
+// External declarations
 extern Keypad keypad;
 extern SSD1306AsciiSpi display;
+extern MenuManager menuManager;
 
+/// @brief Event handler for the keypad
+/// @param key 
 void keypadEvent(KeypadEvent key);
 
 #endif

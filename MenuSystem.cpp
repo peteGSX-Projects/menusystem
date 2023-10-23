@@ -20,6 +20,9 @@
 #include <Arduino.h>
 #include "MenuSystem.h"
 
+// Instantiate the menu manager.
+MenuManager menuManager(display);
+
 /***********************************************************************************
 Set up our keypad
 ***********************************************************************************/
@@ -40,90 +43,71 @@ Set up our display
 SSD1306AsciiSpi display;
 
 /***********************************************************************************
-Instantiate the menu system
-***********************************************************************************/
-Menu menuSystem(display);
-
-/***********************************************************************************
-MenuItem public methods
+MenuManager public methods
 ***********************************************************************************/
 // Constructor
-MenuItem::MenuItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *objectPointer, Menu *parentMenu)
-    : name(name), type(type), action(action), actionHold(actionHold), actionRelease(actionRelease), objectPointer(objectPointer), parentMenu(parentMenu), next(nullptr) {}
+MenuManager::MenuManager(SSD1306AsciiSpi &display)
+  : _display(display), _currentMenuItem(nullptr) {}
 
-/***********************************************************************************
-MenuItem private methods
-***********************************************************************************/
-
-/***********************************************************************************
-Menu public methods
-***********************************************************************************/
-// Constructor
-Menu::Menu(SSD1306AsciiSpi &display)
-  : _display(display), _currentMenu(nullptr), _currentMenuItem(nullptr) {}
-
-void Menu::begin() {
-  _display.begin(OLED_TYPE, CS_PIN, DC_PIN);
-  _displayStartupInfo();
-  delay(2000);
-  _displayHomeScreen();
-}
-
-void Menu::addSubmenu(Menu &submenu, const char *name) {
-  MenuItem *item = new MenuItem("Menu 1", SUBMENU, nullptr, nullptr, nullptr, nullptr, this);
-}
-
-void Menu::addItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *object, Menu *parentMenu) {
-  MenuItem *newItem = new MenuItem(name, type, action, actionHold, actionRelease, object, parentMenu);
-  if (_currentMenuItem) {
-    _currentMenuItem->next = newItem;
+void MenuManager::addMenuItem(MenuItem *item) {
+  item->next = nullptr;
+  if (!_currentMenuItem) {
+    _currentMenuItem = item;
   } else {
-    _currentMenuItem = newItem;
+    MenuItem *currentItem = _currentMenuItem;
+    while (currentItem->next != nullptr) {
+      currentItem = currentItem->next;
+    }
+    currentItem->next = item;
   }
 }
 
-void Menu::processKeypad(char key, KeyState keyState) {
-  switch (keyState) {
-    case PRESSED:
-      keyPress = true;
-      break;
-    case HOLD:
-      keyPress = false;
-      _displayKeyAction(key, HOLD);
-      break;
-    case RELEASED:
-      if (keyPress) {
-        _displayKeyAction(key, PRESSED);
-      } else {
-        _displayKeyAction(key, RELEASED);
-      }
-      break;
-    default:
-      break;
+void MenuManager::displayMenu() {
+  _display.clear();
+  _display.setFont(OLED_FONT);
+}
+
+void MenuManager::processKeypad(char key, KeyState keyState) {
+  if (key == '*') {
+    // Menu or back here
+  } else if (key == '#') {
+    // Pagination or confirmation here
+  } else {
+    switch (keyState) {
+      case PRESSED:
+        keyPress = true;
+        break;
+      case HOLD:
+        keyPress = false;
+        _displayKeyAction(key, HOLD);
+        if (_currentMenuItem && _currentMenuItem->actionHold) {
+          _currentMenuItem->actionHold();
+        }
+        break;
+      case RELEASED:
+        if (keyPress) {
+          _displayKeyAction(key, PRESSED);
+          if (_currentMenuItem && _currentMenuItem->action) {
+            _currentMenuItem->action();
+          }
+        } else {
+          _displayKeyAction(key, RELEASED);
+          if (_currentMenuItem && _currentMenuItem->actionRelease) {
+            _currentMenuItem->actionRelease();
+          }
+        }
+        break;
+      default:
+        break;
+    }
   }
+  displayMenu();
 }
 
 /***********************************************************************************
 Menu private methods
 ***********************************************************************************/
-void Menu::_displayStartupInfo() {
-  _display.clear();
-  _display.setCursor(0, 0);
-  _display.setFont(OLED_FONT);
-  _display.print(F("Menu testing"));
-}
-
-void Menu::_displayHomeScreen() {
-  _display.clear();
-  _display.set2X();
-  _display.setCursor(0, 0);
-  _display.print(F("Home"));
-  _display.set1X();
-  _display.setCursor(0, 7);
-  _display.print(F("* Menu"));
-}
-
-void Menu::_displayKeyAction(char key, KeyState keyState) {
+void MenuManager::_displayKeyAction(char key, KeyState keyState) {
   _display.setCursor(0, 6);
   _display.clearToEOL();
   _display.print(key);
@@ -144,5 +128,43 @@ void Menu::_displayKeyAction(char key, KeyState keyState) {
 
 void keypadEvent(KeypadEvent key) {
   KeyState keyState = keypad.getState();
-  menuSystem.processKeypad(key, keyState);
+  menuManager.processKeypad(key, keyState);
 }
+
+
+// void Menu::begin() {
+//   _display.begin(OLED_TYPE, CS_PIN, DC_PIN);
+//   _displayStartupInfo();
+//   delay(2000);
+//   _displayHomeScreen();
+// }
+
+// void Menu::addSubmenu(Menu &submenu, const char *name) {
+//   MenuItem *item = new MenuItem("Menu 1", SUBMENU, nullptr, nullptr, nullptr, nullptr, this);
+// }
+
+// void Menu::addItem(const char *name, MenuItemType type, void (*action)(void*), void (*actionHold)(void*), void (*actionRelease)(void*), void *object, Menu *parentMenu) {
+//   MenuItem *newItem = new MenuItem(name, type, action, actionHold, actionRelease, object, parentMenu);
+//   if (_currentMenuItem) {
+//     _currentMenuItem->next = newItem;
+//   } else {
+//     _currentMenuItem = newItem;
+//   }
+// }
+
+// void Menu::_displayStartupInfo() {
+//   _display.clear();
+//   _display.setCursor(0, 0);
+//   _display.setFont(OLED_FONT);
+//   _display.print(F("Menu testing"));
+// }
+
+// void Menu::_displayHomeScreen() {
+//   _display.clear();
+//   _display.set2X();
+//   _display.setCursor(0, 0);
+//   _display.print(F("Home"));
+//   _display.set1X();
+//   _display.setCursor(0, 7);
+//   _display.print(F("* Menu"));
+// }

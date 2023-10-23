@@ -6,7 +6,8 @@ void setup() {
   Serial.begin(115200);
   keypad.addEventListener(keypadEvent);
   keypad.setHoldTime(KEYPAD_HOLD);
-  menuSystem.begin();
+  // menuSystem.begin();
+  display.begin(OLED_TYPE, CS_PIN, DC_PIN);
   setupStaticMenus();
 }
 
