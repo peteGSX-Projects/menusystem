@@ -4,8 +4,10 @@
 void setup() {
   Serial.begin(115200);
   menuSystem.begin();
+  keypad.addEventListener(keypadEvent);
+  keypad.setHoldTime(KEYPAD_HOLD);
 }
 
 void loop() {
-  menuSystem.loop();
+  keypad.getKey();
 }

@@ -35,29 +35,27 @@ enum MenuItemType {
 class MenuItem {
 public:
   MenuItem(const char *name, MenuItemType type, void (*action)(void*), void *objectPointer);
-  MenuItem *next;
   const char *name;
   MenuItemType type;
   void (*action)(void*);
   void *objectPointer;
+  MenuItem *next;
 
 };
 
 class MenuSystem {
 public:
-  MenuSystem(SSD1306AsciiSpi &display, Keypad &keypad);
+  // MenuSystem(SSD1306AsciiSpi &display, Keypad &keypad);
+  MenuSystem(SSD1306AsciiSpi &display);
   void begin();
-  void loop();
   void addSubmenu(MenuSystem &submenu, const char *name);
   void addItem(const char *name, MenuItemType type, void (*action)(void*), void *object);
+  void processKeypad(char key, KeyState keyState);
 
 private:
   SSD1306AsciiSpi &_display;
-  Keypad &_keypad;
   MenuSystem *_currentMenu;
   MenuItem *_currentMenuItem;
-  char _currentKey;
-  char _previousKey;
   void _displayStartupInfo();
   void _displayKeyAction(char key, KeyState keyState);
   void _displayMenu();
@@ -65,6 +63,11 @@ private:
 
 };
 
+// End of class
+
 extern MenuSystem menuSystem;
+extern Keypad keypad;
+
+void keypadEvent(KeypadEvent key);
 
 #endif

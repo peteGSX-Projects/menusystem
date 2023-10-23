@@ -32,6 +32,7 @@ char keys[4][3] = {
 byte pin_rows[4] = {KEYPAD_PIN2, KEYPAD_PIN7, KEYPAD_PIN6, KEYPAD_PIN4};
 byte pin_column[3] = {KEYPAD_PIN3, KEYPAD_PIN1, KEYPAD_PIN5};
 Keypad keypad = Keypad(makeKeymap(keys), pin_rows, pin_column, 4, 3);
+bool keyPress = false;
 
 /***********************************************************************************
 Set up our display
@@ -41,7 +42,7 @@ SSD1306AsciiSpi display;
 /***********************************************************************************
 Instantiate the menu system
 ***********************************************************************************/
-MenuSystem menuSystem(display, keypad);
+MenuSystem menuSystem(display);
 
 /***********************************************************************************
 MenuItem public methods
@@ -61,36 +62,12 @@ MenuItem private methods
 MenuSystem public methods
 ***********************************************************************************/
 // Constructor
-MenuSystem::MenuSystem(SSD1306AsciiSpi &display, Keypad &keypad)
-  : _display(display), _keypad(keypad), _currentMenu(nullptr), _currentMenuItem(nullptr) {}
+MenuSystem::MenuSystem(SSD1306AsciiSpi &display)
+  : _display(display), _currentMenu(nullptr), _currentMenuItem(nullptr) {}
 
 void MenuSystem::begin() {
   _display.begin(OLED_TYPE, CS_PIN, DC_PIN);
   _displayStartupInfo();
-  _keypad.setDebounceTime(KEYPAD_DEBOUNCE);
-  _keypad.setHoldTime(KEYPAD_HOLD);
-}
-
-void MenuSystem::loop() {
-  char key = _keypad.getKey();
-  KeyState keyState = _keypad.getState();
-  if (key != NO_KEY) {
-    _currentKey = key;
-    if (keyState == HOLD) {
-      Serial.print(key);
-      Serial.println(F(" held"));
-      _displayKeyAction(key, keyState);
-    } else if (keyState == RELEASED && _currentKey == _previousKey) {
-      Serial.print(key);
-      Serial.println(F(" was held and now released"));
-      _displayKeyAction(key, keyState);
-    } else {
-      Serial.print(key);
-      Serial.println(F(" pressed"));
-      _displayKeyAction(key, keyState);
-    }
-    _previousKey = _currentKey;
-  }
 }
 
 void MenuSystem::addSubmenu(MenuSystem &submenu, const char *name) {
@@ -103,6 +80,27 @@ void MenuSystem::addItem(const char *name, MenuItemType type, void (*action)(voi
     _currentMenuItem->next = newItem;
   } else {
     _currentMenuItem = newItem;
+  }
+}
+
+void MenuSystem::processKeypad(char key, KeyState keyState) {
+  switch (keyState) {
+    case PRESSED:
+      keyPress = true;
+      break;
+    case HOLD:
+      keyPress = false;
+      _displayKeyAction(key, HOLD);
+      break;
+    case RELEASED:
+      if (keyPress) {
+        _displayKeyAction(key, PRESSED);
+      } else {
+        _displayKeyAction(key, RELEASED);
+      }
+      break;
+    default:
+      break;
   }
 }
 
@@ -133,4 +131,9 @@ void MenuSystem::_displayKeyAction(char key, KeyState keyState) {
     default:
       break;
   }
+}
+
+void keypadEvent(KeypadEvent key) {
+  KeyState keyState = keypad.getState();
+  menuSystem.processKeypad(key, keyState);
 }
