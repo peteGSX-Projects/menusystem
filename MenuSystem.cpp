@@ -63,38 +63,54 @@ void MenuManager::addMenuItem(MenuItem *item) {
 }
 
 void MenuManager::displayMenu() {
-  _display.clear();
-  _display.setFont(OLED_FONT);
+  MenuItem *item = this->_currentMenuItem;
+  switch (item->menuItemType) {
+    case MENU:
+      if (item->parent == nullptr) {
+        Serial.println(F("Display home screen"));
+        _displayHomeScreen();
+      } else {
+        // Display menu screen here
+        Serial.println(F("Display menu items"));
+        _displayMenuItems();
+      }
+      break;
+    case ACTION_ITEM:
+      break;
+    case INPUT_ITEM:
+      Serial.println(F("Display input screen"));
+      _displayInputScreen();
+      break;
+    default:
+      break;
+  }
 }
 
 void MenuManager::processKeypad(char key, KeyState keyState) {
-  if (key == '*') {
+  if (key == '*' && keyState == PRESSED) {
     // Menu or back here
-  } else if (key == '#') {
+    Serial.println(F("* pressed"));
+  } else if (key == '#' && keyState == PRESSED) {
     // Pagination or confirmation here
+    Serial.println(F("# pressed"));
   } else {
     switch (keyState) {
       case PRESSED:
-        keyPress = true;
+        _displayKeyAction(key, PRESSED);
+        if (_currentMenuItem && _currentMenuItem->action) {
+          _currentMenuItem->action();
+        }
         break;
       case HOLD:
-        keyPress = false;
         _displayKeyAction(key, HOLD);
         if (_currentMenuItem && _currentMenuItem->actionHold) {
           _currentMenuItem->actionHold();
         }
         break;
       case RELEASED:
-        if (keyPress) {
-          _displayKeyAction(key, PRESSED);
-          if (_currentMenuItem && _currentMenuItem->action) {
-            _currentMenuItem->action();
-          }
-        } else {
-          _displayKeyAction(key, RELEASED);
-          if (_currentMenuItem && _currentMenuItem->actionRelease) {
-            _currentMenuItem->actionRelease();
-          }
+        _displayKeyAction(key, RELEASED);
+        if (_currentMenuItem && _currentMenuItem->actionRelease) {
+          _currentMenuItem->actionRelease();
         }
         break;
       default:
@@ -104,31 +120,106 @@ void MenuManager::processKeypad(char key, KeyState keyState) {
   displayMenu();
 }
 
+int MenuManager::getItemCount() {
+  int count = 0;
+  MenuItem* current = _currentMenuItem;
+  
+  while (current != nullptr) {
+    count++;
+    current = current->next;
+  }
+
+  return count;
+}
+
 /***********************************************************************************
 Menu private methods
 ***********************************************************************************/
 void MenuManager::_displayKeyAction(char key, KeyState keyState) {
+  _display.setFont(OLED_FONT);
   _display.setCursor(0, 6);
   _display.clearToEOL();
   _display.print(key);
+  Serial.print(key);
   switch (keyState) {
     case PRESSED:
       _display.print(F(" pressed"));
+      Serial.println(F(" pressed"));
       break;
     case HOLD:
       _display.print(F(" held"));
+      Serial.println(F(" held"));
       break;
     case RELEASED:
       _display.print(F(" released"));
+      Serial.println(F(" released"));
       break;
     default:
       break;
   }
 }
 
+void MenuManager::_displayHomeScreen() {
+  _display.clear();
+  _display.setFont(OLED_FONT);
+  _display.set2X();
+  _display.setCursor(0, 0);
+  _display.print(F("Home"));
+  _display.set1X();
+  _display.setCursor(0, 7);
+  _display.print(F("* Menu"));
+}
+
+void MenuManager::_displayMenuItems() {
+  _display.clear();
+  _display.set1X();
+  _display.setCursor(0, 0);
+  _display.print(_currentMenuItem->name);
+  
+  
+  _display.setCursor(0, 7);
+  _display.print(F("* Back"));
+  if (getItemCount() > 10) {
+    _display.setCursor(65, 7);
+    _display.print(F("# Next Page"));
+  }
+}
+
+void MenuManager::_displayInputScreen() {
+  _display.clear();
+  _display.set1X();
+  _display.setCursor(0, 0);
+  _display.print(_currentMenuItem->name);
+
+
+  _display.setCursor(0, 7);
+  _display.print(F("* Back"));
+  _display.setCursor(65, 7);
+  _display.print("# Confirm");
+}
+
+// End of class
+
 void keypadEvent(KeypadEvent key) {
   KeyState keyState = keypad.getState();
-  menuManager.processKeypad(key, keyState);
+  switch (keyState) {
+    case PRESSED:
+      keyPress = true;
+      break;
+    case HOLD:
+      keyPress = false;
+      menuManager.processKeypad(key, HOLD);
+      break;
+    case RELEASED:
+      if (keyPress) {
+        menuManager.processKeypad(key, PRESSED);
+      } else {
+        menuManager.processKeypad(key, RELEASED);
+      }
+      break;
+    default:
+      break;
+  }
 }
 
 
@@ -159,12 +250,3 @@ void keypadEvent(KeypadEvent key) {
 //   _display.print(F("Menu testing"));
 // }
 
-// void Menu::_displayHomeScreen() {
-//   _display.clear();
-//   _display.set2X();
-//   _display.setCursor(0, 0);
-//   _display.print(F("Home"));
-//   _display.set1X();
-//   _display.setCursor(0, 7);
-//   _display.print(F("* Menu"));
-// }

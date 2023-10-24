@@ -28,10 +28,19 @@
 #include "Keypad.h"
 #include "StaticMenus.h"
 
+/// @brief Determines the valid key processing and display methods for the item
+enum MenuItemType {
+  MENU,         // Displays columnar menu items with keypad to select, paginated with #
+  ACTION_ITEM,  // Perform the associated action when selected
+  INPUT_ITEM,   // Display input screen and perform action on #
+};
+
 /// @brief Class for each stored menu item
 class MenuItem {
 public:
   const char *name;
+  MenuItemType menuItemType;
+  MenuItem *parent;
   void (*action)();
   void (*actionHold)();
   void (*actionRelease)();
@@ -39,12 +48,24 @@ public:
   MenuItem *next;
 
   // Constructor
+  /// @brief Constructor for a new menu item
+  /// @param name
+  /// @param menuItemType
+  /// @param parent
+  /// @param action
+  /// @param actionHold
+  /// @param actionRelease
+  /// @param objectPointer
   MenuItem(const char *name,
-            void (*action)(),
-            void (*actionHold)(),
-            void (*actionRelease)(),
-            void *objectPointer) {
+            MenuItemType menuItemType,
+            MenuItem *parent,
+            void (*action)() = nullptr,
+            void (*actionHold)() = nullptr,
+            void (*actionRelease)() = nullptr,
+            void *objectPointer = nullptr) {
     this->name = name;
+    this->menuItemType = menuItemType;
+    this->parent = parent;
     this->action = action;
     this->actionHold = actionHold;
     this->actionRelease = actionRelease;
@@ -56,7 +77,7 @@ public:
 /// @brief Class for each submenu, inherits from MenuItem class
 class Submenu : public MenuItem {
 public:
-  Submenu(const char *name) : MenuItem(name, nullptr, nullptr, nullptr, nullptr) {}
+  Submenu(const char *name) : MenuItem(name, MENU, nullptr, nullptr, nullptr, nullptr, nullptr) {}
 };
 
 class MenuManager {
@@ -75,10 +96,27 @@ public:
   /// @param keyState KeyState typedef from Keypad class
   void processKeypad(char key, KeyState keyState);
 
+  /// @brief Retrieve the count of items associated with the menu
+  /// @return 
+  int getItemCount();
+
 private:
   SSD1306AsciiSpi &_display;
   MenuItem *_currentMenuItem;
+
+  /// @brief Temporary function to display they key pressed and its state
+  /// @param key 
+  /// @param keyState 
   void _displayKeyAction(char key, KeyState keyState);
+
+  /// @brief Display the home screen
+  void _displayHomeScreen();
+
+  /// @brief Display all menu items
+  void _displayMenuItems();
+
+  /// @brief Display input screen to capture numeric input
+  void _displayInputScreen();
 
 };
 
