@@ -21,7 +21,7 @@
 #include "MenuSystem.h"
 
 // Instantiate the menu manager.
-MenuManager menuManager(display);
+// MenuManager menuManager(display);
 
 /***********************************************************************************
 Set up our keypad
@@ -35,27 +35,91 @@ char keys[4][3] = {
 byte pin_rows[4] = {KEYPAD_PIN2, KEYPAD_PIN7, KEYPAD_PIN6, KEYPAD_PIN4};
 byte pin_column[3] = {KEYPAD_PIN3, KEYPAD_PIN1, KEYPAD_PIN5};
 Keypad keypad = Keypad(makeKeymap(keys), pin_rows, pin_column, 4, 3);
-bool keyPress = false;
 
-/***********************************************************************************
-Set up our display
-***********************************************************************************/
+// Set up our display
 SSD1306AsciiSpi display;
 
-/***********************************************************************************
-MenuManager public methods
-***********************************************************************************/
+// MenuManager constructor
+MenuManager::MenuManager(SSD1306AsciiSpi &display)
+  : _display(display) {
+  _currentMenuItem = nullptr;
+}
+
+// MenuManager public methods
+void MenuManager::addMenuItem(MenuItem *item) {
+  if (!_currentMenuItem) {
+    _currentMenuItem = item;
+  } else {
+    MenuItem *temp = _currentMenuItem;
+    while (temp->next) {
+      temp = temp->next;
+    }
+    temp->next = item;
+  }
+}
+
+void MenuManager::displayMenu() {
+  _display.clear();
+  _display.setFont(OLED_FONT);
+  _display.setCursor(0, 0);
+  _display.print(F("Menu"));
+  _display.setCursor(0, 1);
+
+  MenuItem *item = _currentMenuItem;
+  while (item) {
+    _display.println(item->name);
+    item = item->next;
+  }
+}
+
+void MenuManager::handleInput(char key, KeyState keyState) {
+  if (key == '*' && keyState == PRESSED) {
+    // Menu or back here
+    Serial.println(F("* pressed"));
+  } else if (key == '#' && keyState == PRESSED) {
+    // Pagination or confirmation here
+    Serial.println(F("# pressed"));
+  } else {
+    switch (keyState) {
+      case PRESSED:
+        _displayKeyAction(key, PRESSED);
+        // if (_currentMenuItem && _currentMenuItem->action) {
+        //   _currentMenuItem->action();
+        // }
+        break;
+      case HOLD:
+        _displayKeyAction(key, HOLD);
+        // if (_currentMenuItem && _currentMenuItem->actionHold) {
+        //   _currentMenuItem->actionHold();
+        // }
+        break;
+      case RELEASED:
+        _displayKeyAction(key, RELEASED);
+        // if (_currentMenuItem && _currentMenuItem->actionRelease) {
+        //   _currentMenuItem->actionRelease();
+        // }
+        break;
+      default:
+        break;
+    }
+  }
+  // displayMenu();
+}
+
+
+
+/*
+// MenuManager public methods
 // Constructor
 MenuManager::MenuManager(SSD1306AsciiSpi &display)
   : _display(display), _currentMenuItem(nullptr) {}
 
 void MenuManager::addMenuItem(MenuItem *item) {
-  item->next = nullptr;
   if (!_currentMenuItem) {
     _currentMenuItem = item;
   } else {
     MenuItem *currentItem = _currentMenuItem;
-    while (currentItem->next != nullptr) {
+    while (currentItem->next) {
       currentItem = currentItem->next;
     }
     currentItem->next = item;
@@ -131,10 +195,8 @@ int MenuManager::getItemCount() {
 
   return count;
 }
-
-/***********************************************************************************
-Menu private methods
-***********************************************************************************/
+*/
+// Menu private methods
 void MenuManager::_displayKeyAction(char key, KeyState keyState) {
   _display.setFont(OLED_FONT);
   _display.setCursor(0, 6);
@@ -158,7 +220,7 @@ void MenuManager::_displayKeyAction(char key, KeyState keyState) {
       break;
   }
 }
-
+/*
 void MenuManager::_displayHomeScreen() {
   _display.clear();
   _display.setFont(OLED_FONT);
@@ -199,29 +261,7 @@ void MenuManager::_displayInputScreen() {
 }
 
 // End of class
-
-void keypadEvent(KeypadEvent key) {
-  KeyState keyState = keypad.getState();
-  switch (keyState) {
-    case PRESSED:
-      keyPress = true;
-      break;
-    case HOLD:
-      keyPress = false;
-      menuManager.processKeypad(key, HOLD);
-      break;
-    case RELEASED:
-      if (keyPress) {
-        menuManager.processKeypad(key, PRESSED);
-      } else {
-        menuManager.processKeypad(key, RELEASED);
-      }
-      break;
-    default:
-      break;
-  }
-}
-
+*/
 
 // void Menu::begin() {
 //   _display.begin(OLED_TYPE, CS_PIN, DC_PIN);

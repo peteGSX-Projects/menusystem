@@ -26,8 +26,48 @@
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiSpi.h"
 #include "Keypad.h"
-#include "StaticMenus.h"
+// #include "StaticMenus.h"
 
+// External declarations
+extern Keypad keypad;
+extern SSD1306AsciiSpi display;
+
+class MenuItem {
+public:
+  const char *name;
+  MenuItem *parent;
+  MenuItem *next;
+
+  MenuItem(const char *name, MenuItem *parent) {
+    this->name = name;
+    this->parent = parent;
+    this->next = nullptr;
+  }
+
+};
+
+class Submenu : public MenuItem {
+public:
+  Submenu(const char *name, MenuItem *parent) : MenuItem(name, parent) {}
+
+};
+
+class MenuManager {
+public:
+  MenuManager(SSD1306AsciiSpi &display);
+
+  void addMenuItem(MenuItem *item);
+  void displayMenu();
+  void handleInput(char key, KeyState keyState);
+
+private:
+  MenuItem *_currentMenuItem;
+  SSD1306AsciiSpi &_display;
+  void _displayKeyAction(char key, KeyState keyState);
+
+};
+
+/*
 /// @brief Determines the valid key processing and display methods for the item
 enum MenuItemType {
   MENU,         // Displays columnar menu items with keypad to select, paginated with #
@@ -121,14 +161,12 @@ private:
 };
 
 // End of class
+*/
 
-// External declarations
-extern Keypad keypad;
-extern SSD1306AsciiSpi display;
-extern MenuManager menuManager;
+// extern MenuManager menuManager;
 
-/// @brief Event handler for the keypad
-/// @param key 
-void keypadEvent(KeypadEvent key);
+
+
+
 
 #endif
